@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kove — كوف</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #060f1a;
+  --bg2:     #091525;
+  --bg3:     #0d1e30;
+  --bg4:     #0f2438;
+  --teal:    #3ecfc6;
+  --teal-d:  #2a9d94;
+  --gold:    #c8a84b;
+  --white:   #f0f6fa;
+  --muted:   #5a7a94;
+  --muted2:  #3d5a72;
+  --border:  rgba(255,255,255,0.05);
+  --border2: rgba(62,207,198,0.12);
+  --online:  #22c55e;
+  --err:     #f87171;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--white); font-family:'Cairo',sans-serif; display:flex; -webkit-font-smoothing:antialiased; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--muted2); border-radius:2px; }
+
+/* ══════════════════════════════════════
+   COLUMN 1 — SERVERS (right, narrow)
+══════════════════════════════════════ */
+.col-servers {
+  width:62px; flex-shrink:0;
+  background:var(--bg);
+  border-left:1px solid var(--border);
+  display:flex; flex-direction:column; align-items:center;
+  padding:12px 0; gap:6px;
+  overflow-y:auto; overflow-x:hidden;
+}
+
+/* logo */
+.srv-logo {
+  width:42px; height:42px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:6px; cursor:pointer; flex-shrink:0;
+  background:linear-gradient(135deg, var(--teal-d), var(--teal));
+}
+
+.srv-divider {
+  width:32px; height:1px; background:var(--border); flex-shrink:0; margin:4px 0;
+}
+
+.srv-icon {
+  width:42px; height:42px; border-radius:14px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bg3); cursor:pointer;
+  font-size:18px; font-weight:700; color:var(--muted);
+  transition:border-radius .2s, background .2s, color .2s;
+  position:relative; overflow:hidden;
+  font-family:'Cairo',sans-serif;
+}
+.srv-icon img { width:100%; height:100%; object-fit:cover; }
+.srv-icon:hover { border-radius:10px; background:var(--teal-d); color:var(--white); }
+.srv-icon.active { border-radius:10px; background:var(--teal); color:var(--bg); }
+
+/* active indicator */
+.srv-icon.active::before {
+  content:'';
+  position:absolute; right:-3px; top:50%; transform:translateY(-50%);
+  width:4px; height:20px; background:var(--teal); border-radius:2px 0 0 2px;
+}
+
+.srv-icon.dm { background:var(--bg3); color:var(--teal); }
+.srv-icon.dm:hover { background:var(--teal); color:var(--bg); }
+
+.srv-add {
+  width:42px; height:42px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bg3); cursor:pointer; color:var(--teal);
+  border:1px dashed var(--muted2);
+  transition:all .2s;
+}
+.srv-add:hover { background:var(--teal); color:var(--bg); border-color:var(--teal); border-radius:14px; }
+
+/* ══════════════════════════════════════
+   COLUMN 2 — CHANNELS (right sidebar)
+══════════════════════════════════════ */
+.col-channels {
+  width:240px; flex-shrink:0;
+  background:var(--bg2);
+  border-left:1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+
+/* server header */
+.srv-header {
+  padding:0 14px;
+  height:52px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:background .2s;
+}
+.srv-header:hover { background:var(--bg3); }
+.srv-header-name { font-size:15px; font-weight:800; color:var(--white); }
+.srv-header-icon { color:var(--muted); }
+
+/* channels list */
+.channels-list {
+  flex:1; overflow-y:auto; padding:8px 0;
+}
+
+.ch-category {
+  padding:16px 14px 4px;
+  display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer;
+}
+.ch-category-name {
+  font-size:10px; font-weight:700; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase;
+}
+.ch-category svg { color:var(--muted); }
+
+.ch-item {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 10px 5px 14px; margin:1px 6px;
+  border-radius:6px; cursor:pointer;
+  color:var(--muted); font-size:14px; font-weight:600;
+  transition:background .15s, color .15s;
+  position:relative;
+}
+.ch-item:hover { background:var(--bg4); color:var(--white); }
+.ch-item.active {
+  background:rgba(62,207,198,.1);
+  color:var(--white);
+}
+.ch-item.active::before {
+  content:'';
+  position:absolute; right:0; top:4px; bottom:4px;
+  width:3px; background:var(--teal); border-radius:0 2px 2px 0;
+}
+.ch-item.unread { color:var(--white); }
+.ch-item svg { flex-shrink:0; }
+.ch-badge {
+  margin-right:auto; margin-left:4px;
+  background:var(--err); color:white;
+  font-size:10px; font-weight:800; padding:1px 6px;
+  border-radius:10px; min-width:18px; text-align:center;
+}
+
+/* user bar */
+.user-bar {
+  height:56px; flex-shrink:0;
+  background:var(--bg); border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+  padding:0 8px 0 10px;
+}
+.user-av {
+  width:34px; height:34px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal-d),var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; color:var(--bg);
+  position:relative; cursor:pointer; overflow:hidden;
+}
+.user-av img { width:100%; height:100%; object-fit:cover; }
+.user-av .online-dot {
+  position:absolute; bottom:0; left:0;
+  width:10px; height:10px; border-radius:50%;
+  background:var(--online); border:2px solid var(--bg);
+}
+.user-info { flex:1; min-width:0; cursor:pointer; }
+.user-name { font-size:13px; font-weight:800; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-tag { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-actions { display:flex; gap:2px; }
+.ua-btn {
+  width:30px; height:30px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); cursor:pointer; background:none; border:none;
+  transition:background .15s, color .15s;
+}
+.ua-btn:hover { background:var(--bg4); color:var(--white); }
+
+/* ══════════════════════════════════════
+   COLUMN 3 — MAIN CHAT
+══════════════════════════════════════ */
+.col-main {
+  flex:1; min-width:0;
+  display:flex; flex-direction:column;
+  background:var(--bg3);
+}
+
+/* channel topbar */
+.ch-topbar {
+  height:52px; flex-shrink:0;
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center;
+  padding:0 16px; gap:10px;
+}
+.ch-topbar-name {
+  font-size:16px; font-weight:800; color:var(--white);
+  display:flex; align-items:center; gap:6px;
+}
+.ch-topbar-desc {
+  font-size:13px; color:var(--muted);
+  padding-right:10px; border-right:1px solid var(--border);
+  margin-right:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ch-topbar-actions { margin-right:auto; display:flex; gap:4px; }
+.tb-btn {
+  width:32px; height:32px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); cursor:pointer; background:none; border:none;
+  transition:background .15s, color .15s;
+}
+.tb-btn:hover { background:var(--bg4); color:var(--white); }
+
+/* messages area */
+.messages {
+  flex:1; overflow-y:auto;
+  padding:16px 0 8px;
+  display:flex; flex-direction:column; gap:0;
+}
+
+/* date separator */
+.date-sep {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 16px; margin:8px 0;
+}
+.date-sep::before, .date-sep::after {
+  content:''; flex:1; height:1px; background:var(--border);
+}
+.date-sep span { font-size:11px; color:var(--muted); font-weight:600; white-space:nowrap; }
+
+/* message */
+.msg {
+  display:flex; gap:12px;
+  padding:4px 16px 4px 16px;
+  transition:background .1s;
+  position:relative;
+}
+.msg:hover { background:rgba(255,255,255,.02); }
+.msg:hover .msg-actions { opacity:1; }
+
+.msg-av {
+  width:38px; height:38px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800; color:white;
+  margin-top:2px; overflow:hidden; cursor:pointer;
+}
+.msg-av img { width:100%; height:100%; object-fit:cover; }
+
+.msg-content { flex:1; min-width:0; }
+.msg-header {
+  display:flex; align-items:baseline; gap:8px; margin-bottom:3px; flex-wrap:wrap;
+}
+.msg-name {
+  font-size:14px; font-weight:800; cursor:pointer;
+}
+.msg-name:hover { text-decoration:underline; }
+.msg-tag { font-size:11px; color:var(--muted); font-weight:400; }
+.msg-time { font-size:11px; color:var(--muted); font-weight:400; margin-right:auto; }
+.msg-text { font-size:14px; color:var(--white); line-height:1.6; word-break:break-word; }
+.msg-text.muted-msg { color:var(--muted); font-style:italic; font-size:13px; }
+
+/* continued message (same user) */
+.msg.continued { padding-top:1px; }
+.msg.continued .msg-av { visibility:hidden; }
+.msg.continued .msg-header { display:none; }
+.msg.continued:hover .msg-time-side { opacity:1; }
+.msg-time-side {
+  position:absolute; right:62px; top:6px;
+  font-size:10px; color:var(--muted); opacity:0;
+  transition:opacity .15s;
+  font-weight:400;
+}
+
+/* message actions */
+.msg-actions {
+  position:absolute; left:16px; top:-14px;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:8px; padding:3px 4px;
+  display:flex; gap:2px; opacity:0; transition:opacity .15s;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+.ma-btn {
+  width:26px; height:26px; border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); cursor:pointer; background:none; border:none;
+  font-size:14px; transition:background .15s, color .15s;
+}
+.ma-btn:hover { background:var(--bg4); color:var(--white); }
+
+/* typing indicator */
+.typing-indicator {
+  padding:4px 16px 8px;
+  font-size:12px; color:var(--muted);
+  display:flex; align-items:center; gap:6px;
+  min-height:28px;
+}
+.typing-dots { display:flex; gap:3px; }
+.typing-dots span {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--muted); animation:tdot 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay:.2s; }
+.typing-dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes tdot { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-4px);} }
+
+/* message input */
+.input-area {
+  padding:0 16px 16px; flex-shrink:0;
+}
+.input-box {
+  background:var(--bg4);
+  border:1px solid var(--border);
+  border-radius:10px;
+  display:flex; align-items:center; gap:8px;
+  padding:0 12px;
+  transition:border-color .2s;
+}
+.input-box:focus-within { border-color:var(--border2); }
+.input-btn {
+  width:34px; height:34px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); cursor:pointer; background:none; border:none;
+  transition:color .2s; border-radius:6px;
+}
+.input-btn:hover { color:var(--teal); }
+.msg-input {
+  flex:1; background:none; border:none; outline:none;
+  font-family:'Cairo',sans-serif; font-size:14px; color:var(--white);
+  padding:12px 0; resize:none; min-height:44px; max-height:120px;
+  line-height:1.5;
+}
+.msg-input::placeholder { color:var(--muted); }
+.send-btn {
+  width:32px; height:32px; border-radius:7px;
+  background:var(--teal); border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--bg); transition:opacity .2s, transform .2s;
+  flex-shrink:0;
+}
+.send-btn:hover { opacity:.85; transform:scale(1.05); }
+
+/* ══════════════════════════════════════
+   COLUMN 4 — MEMBERS (optional)
+══════════════════════════════════════ */
+.col-members {
+  width:220px; flex-shrink:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  overflow-y:auto; padding:12px 0;
+  display:flex; flex-direction:column;
+}
+.members-section { margin-bottom:8px; }
+.members-label {
+  font-size:10px; font-weight:700; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase;
+  padding:6px 14px;
+}
+.member-item {
+  display:flex; align-items:center; gap:9px;
+  padding:5px 10px 5px 14px; margin:1px 6px;
+  border-radius:6px; cursor:pointer;
+  transition:background .15s;
+}
+.member-item:hover { background:var(--bg4); }
+.member-av {
+  width:30px; height:30px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:800; color:white;
+  position:relative; overflow:hidden;
+}
+.member-av img { width:100%; height:100%; object-fit:cover; }
+.member-av .status {
+  position:absolute; bottom:0; left:0;
+  width:9px; height:9px; border-radius:50%;
+  border:2px solid var(--bg2);
+}
+.status.online { background:var(--online); }
+.status.idle { background:#facc15; }
+.status.dnd { background:var(--err); }
+.status.offline { background:var(--muted2); }
+.member-name { font-size:13px; font-weight:600; color:var(--muted); }
+.member-item:hover .member-name { color:var(--white); }
+.member-role {
+  font-size:10px; color:var(--muted2); margin-top:1px;
+}
+
+/* ── SVG LOGO ── */
+.kove-logo-svg {
+  width:28px; height:28px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+.msg { animation:fadeIn .2s ease both; }
+
+/* ── TOOLTIP ── */
+[data-tip] { position:relative; }
+[data-tip]:hover::after {
+  content:attr(data-tip);
+  position:absolute; left:calc(100% + 8px); top:50%; transform:translateY(-50%);
+  background:var(--bg); border:1px solid var(--border);
+  color:var(--white); font-size:12px; white-space:nowrap;
+  padding:4px 10px; border-radius:6px; z-index:100;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ COL 4: MEMBERS ══ -->
+<div class="col-members" id="membersPanel">
+  <div class="members-section">
+    <div class="members-label">أونلاين — 4</div>
+    <div class="member-item">
+      <div class="member-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">
+        أ<div class="status online"></div>
+      </div>
+      <div><div class="member-name">أحمد</div><div class="member-role">@ahmed_pro</div></div>
+    </div>
+    <div class="member-item">
+      <div class="member-av" style="background:linear-gradient(135deg,#c8a84b,#a07830)">
+        س<div class="status online"></div>
+      </div>
+      <div><div class="member-name">سارة</div><div class="member-role">@sara_g</div></div>
+    </div>
+    <div class="member-item">
+      <div class="member-av" style="background:linear-gradient(135deg,#7c6fe0,#5a4fcf)">
+        م<div class="status idle"></div>
+      </div>
+      <div><div class="member-name">محمود</div><div class="member-role">@mah_x</div></div>
+    </div>
+    <div class="member-item">
+      <div class="member-av" style="background:linear-gradient(135deg,#f87171,#dc2626)">
+        ك<div class="status dnd"></div>
+      </div>
+      <div><div class="member-name">كريم</div><div class="member-role">@karim_99</div></div>
+    </div>
+  </div>
+  <div class="members-section">
+    <div class="members-label">أوفلاين — 3</div>
+    <div class="member-item">
+      <div class="member-av" style="background:#1e3a5f">
+        ن<div class="status offline"></div>
+      </div>
+      <div><div class="member-name" style="opacity:.5">نور</div><div class="member-role">@nour_p</div></div>
+    </div>
+    <div class="member-item">
+      <div class="member-av" style="background:#1e3a5f">
+        ي<div class="status offline"></div>
+      </div>
+      <div><div class="member-name" style="opacity:.5">يوسف</div><div class="member-role">@youssef</div></div>
+    </div>
+    <div class="member-item">
+      <div class="member-av" style="background:#1e3a5f">
+        ل<div class="status offline"></div>
+      </div>
+      <div><div class="member-name" style="opacity:.5">لينا</div><div class="member-role">@lina_x</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COL 3: MAIN CHAT ══ -->
+<div class="col-main">
+  <!-- topbar -->
+  <div class="ch-topbar">
+    <div class="ch-topbar-name">
+      <svg width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      عام
+    </div>
+    <div class="ch-topbar-desc">قناة الحوارات العامة للسيرفر</div>
+    <div class="ch-topbar-actions">
+      <button class="tb-btn" data-tip="بحث">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="tb-btn" data-tip="الأعضاء" onclick="toggleMembers()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+      <button class="tb-btn" data-tip="إشعارات">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- messages -->
+  <div class="messages" id="messages">
+    <div class="date-sep"><span>اليوم</span></div>
+
+    <div class="msg">
+      <div class="msg-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">أ</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-name" style="color:#3ecfc6">أحمد</span>
+          <span class="msg-tag">@ahmed_pro</span>
+          <span class="msg-time">٩:٢٠ م</span>
+        </div>
+        <div class="msg-text">السلام عليكم يا جماعة 👋</div>
+      </div>
+      <div class="msg-actions">
+        <button class="ma-btn" title="لايك">👍</button>
+        <button class="ma-btn" title="رد">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+        </button>
+        <button class="ma-btn" title="المزيد">···</button>
+      </div>
+    </div>
+
+    <div class="msg continued">
+      <div class="msg-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">أ</div>
+      <div class="msg-content">
+        <div class="msg-text">في أخبار جديدة عن التحديث الجديد؟ سمعت إن فيه حاجات كتير هتتضاف 🔥</div>
+      </div>
+      <span class="msg-time-side">٩:٢١ م</span>
+    </div>
+
+    <div class="msg" style="margin-top:8px">
+      <div class="msg-av" style="background:linear-gradient(135deg,#c8a84b,#a07830)">س</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-name" style="color:#c8a84b">سارة</span>
+          <span class="msg-tag">@sara_g</span>
+          <span class="msg-time">٩:٢٣ م</span>
+        </div>
+        <div class="msg-text">أيوه سمعت إن Kove Bot هيتحدث وهيضيف features جديدة 🤖</div>
+      </div>
+      <div class="msg-actions">
+        <button class="ma-btn">👍</button>
+        <button class="ma-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+        <button class="ma-btn">···</button>
+      </div>
+    </div>
+
+    <div class="msg continued">
+      <div class="msg-av" style="background:linear-gradient(135deg,#c8a84b,#a07830)">س</div>
+      <div class="msg-content">
+        <div class="msg-text">وكمان نظام التذاكر هيبقى أحسن بكتير من الإصدار ده</div>
+      </div>
+      <span class="msg-time-side">٩:٢٤ م</span>
+    </div>
+
+    <div class="msg" style="margin-top:8px">
+      <div class="msg-av" style="background:linear-gradient(135deg,#7c6fe0,#5a4fcf)">م</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-name" style="color:#9d8ff5">محمود</span>
+          <span class="msg-tag">@mah_x</span>
+          <span class="msg-time">٩:٢٦ م</span>
+        </div>
+        <div class="msg-text">جامد! بالظبط ده اللي كنا محتاجينه. متى هيتنزل التحديث؟</div>
+      </div>
+      <div class="msg-actions">
+        <button class="ma-btn">👍</button>
+        <button class="ma-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+        <button class="ma-btn">···</button>
+      </div>
+    </div>
+
+    <div class="msg" style="margin-top:8px">
+      <div class="msg-av" style="background:linear-gradient(135deg,#f87171,#dc2626)">ك</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-name" style="color:#f87171">كريم</span>
+          <span class="msg-tag">@karim_99</span>
+          <span class="msg-time">٩:٢٨ م</span>
+        </div>
+        <div class="msg-text">مش عارف بس التيم شغال عليه بجد، هيكون قريب إن شاء الله 🚀</div>
+      </div>
+      <div class="msg-actions">
+        <button class="ma-btn">👍</button>
+        <button class="ma-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+        <button class="ma-btn">···</button>
+      </div>
+    </div>
+
+    <div class="msg continued">
+      <div class="msg-av" style="background:linear-gradient(135deg,#f87171,#dc2626)">ك</div>
+      <div class="msg-content">
+        <div class="msg-text">وهيكون فيه تحديث للـ UI كمان، الشكل الجديد أجمد بكتير ✨</div>
+      </div>
+      <span class="msg-time-side">٩:٢٩ م</span>
+    </div>
+
+    <div class="msg" style="margin-top:8px">
+      <div class="msg-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">أ</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-name" style="color:#3ecfc6">أحمد</span>
+          <span class="msg-tag">@ahmed_pro</span>
+          <span class="msg-time">٩:٣١ م</span>
+        </div>
+        <div class="msg-text">ربنا يوفقهم! الـ platform ده بيكبر بسرعة كمان، أهلاً بالجميع 🎉</div>
+      </div>
+      <div class="msg-actions">
+        <button class="ma-btn">👍</button>
+        <button class="ma-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+        <button class="ma-btn">···</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- typing -->
+  <div class="typing-indicator">
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+    <span>سارة تكتب...</span>
+  </div>
+
+  <!-- input -->
+  <div class="input-area">
+    <div class="input-box">
+      <button class="input-btn" title="إرفاق ملف">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <textarea class="msg-input" id="msgInput" placeholder="اكتب رسالة في #عام" rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="input-btn" title="إيموجي">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      </button>
+      <button class="send-btn" onclick="sendMsg()" title="إرسال">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COL 2: CHANNELS ══ -->
+<div class="col-channels">
+  <div class="srv-header">
+    <span class="srv-header-name">جيمرز مصر</span>
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="srv-header-icon"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="channels-list">
+    <!-- text channels -->
+    <div class="ch-category">
+      <span class="ch-category-name">قنوات نصية</span>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    <div class="ch-item active" onclick="switchChannel(this,'عام')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      عام
+    </div>
+    <div class="ch-item unread" onclick="switchChannel(this,'أخبار')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      أخبار
+      <span class="ch-badge">3</span>
+    </div>
+    <div class="ch-item" onclick="switchChannel(this,'دعم')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      دعم
+    </div>
+    <div class="ch-item" onclick="switchChannel(this,'إعلانات')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+      إعلانات
+    </div>
+
+    <!-- voice channels -->
+    <div class="ch-category" style="margin-top:8px">
+      <span class="ch-category-name">قنوات صوتية</span>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    <div class="ch-item" onclick="switchChannel(this,'لوبي')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      لوبي
+    </div>
+    <div class="ch-item" onclick="switchChannel(this,'جيمنج')">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      جيمنج
+    </div>
+  </div>
+
+  <!-- user bar -->
+  <div class="user-bar">
+    <div class="user-av">
+      م
+      <div class="online-dot"></div>
+    </div>
+    <div class="user-info">
+      <div class="user-name">مالك</div>
+      <div class="user-tag">@malek</div>
+    </div>
+    <div class="user-actions">
+      <button class="ua-btn" title="ميكروفون">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+      <button class="ua-btn" title="سماعة">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+      </button>
+      <button class="ua-btn" title="الإعدادات">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COL 1: SERVERS ══ -->
+<div class="col-servers">
+  <!-- Kove Logo -->
+  <div class="srv-logo" title="الرئيسية">
+    <svg class="kove-logo-svg" viewBox="0 0 28 28" fill="none">
+      <path d="M8 4 L8 24 M8 14 L20 4 M8 14 L20 24" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <div class="srv-divider"></div>
+
+  <!-- DMs -->
+  <div class="srv-icon dm" data-tip="الرسائل الخاصة">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+  </div>
+
+  <div class="srv-divider"></div>
+
+  <!-- Servers -->
+  <div class="srv-icon active" data-tip="جيمرز مصر">ج</div>
+  <div class="srv-icon" data-tip="موسيقى وراب">م</div>
+  <div class="srv-icon" data-tip="كرة القدم" style="background:linear-gradient(135deg,#166534,#15803d)">
+    <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+  </div>
+  <div class="srv-icon" data-tip="تقنية وبرمجة" style="background:linear-gradient(135deg,#1e40af,#3b82f6)">
+    <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  </div>
+
+  <div class="srv-divider"></div>
+
+  <!-- Add server -->
+  <div class="srv-add" data-tip="إضافة سيرفر">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </div>
+</div>
+
+<script>
+// channel switch
+function switchChannel(el, name) {
+  document.querySelectorAll('.ch-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  el.classList.remove('unread');
+  const badge = el.querySelector('.ch-badge');
+  if (badge) badge.remove();
+  document.querySelector('.ch-topbar-name').innerHTML = `
+    <svg width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    ${name}`;
+  document.querySelector('.msg-input').placeholder = `اكتب رسالة في #${name}`;
+}
+
+// toggle members panel
+function toggleMembers() {
+  const p = document.getElementById('membersPanel');
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+
+// send message
+function sendMsg() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.style.marginTop = '8px';
+  div.innerHTML = `
+    <div class="msg-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">م</div>
+    <div class="msg-content">
+      <div class="msg-header">
+        <span class="msg-name" style="color:#3ecfc6">مالك</span>
+        <span class="msg-tag">@malek</span>
+        <span class="msg-time">${new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+      <div class="msg-text">${text.replace(/</g,'&lt;')}</div>
+    </div>
+    <div class="msg-actions">
+      <button class="ma-btn">👍</button>
+      <button class="ma-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+      <button class="ma-btn">···</button>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  input.value = '';
+  input.style.height = 'auto';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// scroll to bottom on load
+document.getElementById('messages').scrollTop = 99999;
+</script>
+</body>
+</html>
