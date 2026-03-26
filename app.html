@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kove</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:     #040b14;
+  --bg2:    #071320;
+  --bg3:    #0a1a2e;
+  --bg4:    #0d2038;
+  --teal:   #3ecfc6;
+  --teal-d: #2a9d94;
+  --gold:   #c8a84b;
+  --white:  #e8f4f8;
+  --muted:  #4a6a82;
+  --muted2: #2a4558;
+  --border: rgba(62,207,198,0.1);
+  --border2:rgba(255,255,255,0.05);
+  --online: #22c55e;
+  --r:      10px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--white);font-family:'Cairo',sans-serif;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px;}
+
+/* ══════════════════════════════
+   SPLASH SCREEN
+══════════════════════════════ */
+#splash{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .6s ease, visibility .6s ease;
+}
+#splash.hide{opacity:0;visibility:hidden;}
+.splash-logo{
+  width:100px;height:100px;object-fit:contain;
+  animation:splashPulse 1.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 30px rgba(62,207,198,.5));
+}
+.splash-logo-fallback{
+  width:100px;height:100px;border-radius:28px;
+  background:linear-gradient(135deg,var(--teal-d),var(--teal));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px rgba(62,207,198,.4);
+  animation:splashPulse 1.5s ease-in-out infinite;
+}
+.splash-name{
+  font-family:'Orbitron',sans-serif;
+  font-size:28px;font-weight:900;letter-spacing:6px;
+  background:linear-gradient(135deg,var(--teal),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:fadeIn .8s ease .3s both;
+}
+.splash-dots{display:flex;gap:6px;animation:fadeIn .8s ease .6s both;}
+.splash-dots span{
+  width:6px;height:6px;border-radius:50%;background:var(--teal);
+  animation:dotBounce 1.2s ease-in-out infinite;
+}
+.splash-dots span:nth-child(2){animation-delay:.2s;}
+.splash-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes splashPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+@keyframes dotBounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+/* ══════════════════════════════
+   APP LAYOUT
+══════════════════════════════ */
+#app{
+  display:flex;height:100vh;
+  opacity:0;transition:opacity .5s ease;
+}
+#app.show{opacity:1;}
+
+/* ══════════════════════════════
+   LEFT PANEL — SERVERS + CHANNELS
+   (desktop only)
+══════════════════════════════ */
+.left-panel{
+  width:260px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--bg2);
+  border-left:1px solid var(--border2);
+}
+
+/* server switcher */
+.srv-strip{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 14px 10px;
+  border-bottom:1px solid var(--border2);
+  overflow-x:auto;
+}
+.srv-strip::-webkit-scrollbar{height:0;}
+.srv-ic{
+  width:36px;height:36px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:var(--muted);
+  background:var(--bg3);cursor:pointer;
+  transition:all .2s;position:relative;
+}
+.srv-ic:hover{background:var(--bg4);color:var(--white);}
+.srv-ic.act{background:var(--teal);color:var(--bg);box-shadow:0 3px 12px rgba(62,207,198,.3);}
+.srv-ic.act::after{
+  content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--teal);
+}
+.srv-ic.add{border:1.5px dashed var(--muted2);color:var(--teal);}
+.srv-ic.add:hover{background:rgba(62,207,198,.08);border-color:var(--teal);}
+
+/* server name */
+.srv-name-bar{
+  padding:12px 16px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+}
+.srv-name-bar:hover{background:rgba(255,255,255,.02);}
+.srv-name-text{font-size:15px;font-weight:900;color:var(--white);}
+.srv-name-bar svg{color:var(--muted);}
+
+/* channels list */
+.ch-list{flex:1;overflow-y:auto;padding:4px 0 8px;}
+.ch-cat{
+  font-size:10px;font-weight:700;color:var(--muted);
+  letter-spacing:1.2px;text-transform:uppercase;
+  padding:10px 16px 4px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ch-row{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px 6px 16px;margin:1px 6px;
+  border-radius:8px;font-size:14px;color:var(--muted);
+  cursor:pointer;transition:all .12s;position:relative;
+}
+.ch-row:hover{background:var(--bg3);color:var(--white);}
+.ch-row.act{
+  background:rgba(62,207,198,.12);color:var(--white);
+  border-right:3px solid var(--teal);
+}
+.ch-row.unread{color:var(--white);font-weight:700;}
+.ch-badge{
+  margin-right:auto;background:#f87171;color:#fff;
+  font-size:9px;font-weight:800;padding:1px 6px;
+  border-radius:8px;min-width:16px;text-align:center;
+}
+
+/* user bar */
+.user-bar{
+  padding:10px 12px;
+  background:var(--bg);border-top:1px solid var(--border2);
+  display:flex;align-items:center;gap:9px;
+  flex-shrink:0;
+}
+.u-av{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal-d),var(--teal));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:var(--bg);
+  position:relative;cursor:pointer;
+}
+.u-dot{
+  position:absolute;bottom:0;left:0;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--online);border:2px solid var(--bg);
+}
+.u-info{flex:1;min-width:0;}
+.u-name{font-size:13px;font-weight:800;color:var(--white);}
+.u-tag{font-size:10px;color:var(--muted);}
+.u-btns{display:flex;gap:1px;}
+.u-btn{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+  transition:all .15s;
+}
+.u-btn:hover{background:var(--bg3);color:var(--white);}
+
+/* ══════════════════════════════
+   RIGHT — CHAT AREA
+══════════════════════════════ */
+.chat-area{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  background:var(--bg);
+}
+
+/* CHANNEL TABS */
+.ch-tabs{
+  display:flex;align-items:center;gap:6px;
+  padding:10px 16px 0;
+  border-bottom:1px solid var(--border2);
+  background:var(--bg2);
+  overflow-x:auto;flex-shrink:0;
+}
+.ch-tabs::-webkit-scrollbar{height:0;}
+.ch-tab{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 16px 10px;
+  font-size:14px;font-weight:700;color:var(--muted);
+  cursor:pointer;white-space:nowrap;
+  border-bottom:2px solid transparent;
+  transition:all .15s;border-radius:8px 8px 0 0;
+  position:relative;flex-shrink:0;
+}
+.ch-tab:hover{color:var(--white);background:rgba(255,255,255,.03);}
+.ch-tab.act{
+  color:var(--white);
+  border-bottom-color:var(--teal);
+  background:rgba(62,207,198,.06);
+}
+.ch-tab.act svg{color:var(--teal);}
+.tab-badge{
+  background:#f87171;color:#fff;
+  font-size:9px;font-weight:800;
+  padding:1px 5px;border-radius:8px;
+}
+
+/* CHAT TOPBAR */
+.chat-top{
+  height:46px;flex-shrink:0;
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+  border-bottom:1px solid var(--border2);
+  background:var(--bg);
+}
+.ct-name{font-size:14px;font-weight:800;color:var(--white);display:flex;align-items:center;gap:6px;}
+.ct-desc{font-size:12px;color:var(--muted);margin-right:8px;padding-right:8px;border-right:1px solid var(--border2);}
+.ct-acts{margin-right:auto;display:flex;gap:3px;}
+.ct-btn{
+  width:30px;height:30px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+  transition:all .15s;
+}
+.ct-btn:hover{background:var(--bg3);color:var(--white);}
+
+/* MESSAGES */
+.msgs{flex:1;overflow-y:auto;padding:16px;}
+.msg-wrap{display:flex;flex-direction:column;gap:10px;}
+
+.msg-group{display:flex;gap:0;flex-direction:column;}
+
+/* bubble message */
+.bubble-row{
+  display:flex;align-items:flex-end;gap:8px;
+  margin-bottom:3px;
+}
+.bubble-row.mine{flex-direction:row-reverse;}
+.b-av{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;cursor:pointer;
+  transition:opacity .15s;overflow:hidden;
+}
+.b-av:hover{opacity:.85;}
+.b-av.hidden{visibility:hidden;}
+.b-content{display:flex;flex-direction:column;gap:2px;max-width:68%;}
+.bubble-row.mine .b-content{align-items:flex-start;}
+.b-meta{
+  display:flex;align-items:center;gap:6px;
+  padding:0 4px;margin-bottom:3px;
+}
+.bubble-row.mine .b-meta{flex-direction:row-reverse;}
+.b-name{font-size:12px;font-weight:800;color:var(--muted);}
+.b-time{font-size:10px;color:var(--muted2);}
+.bubble{
+  padding:10px 14px;border-radius:18px;
+  font-size:14px;line-height:1.6;
+  word-break:break-word;position:relative;
+  transition:opacity .15s;cursor:pointer;
+}
+.bubble:hover{opacity:.92;}
+
+/* others bubbles */
+.bubble.other{
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:4px 18px 18px 18px;
+  color:var(--white);
+}
+/* mine bubbles */
+.bubble.mine{
+  background:linear-gradient(135deg,var(--teal-d),var(--teal));
+  color:var(--bg);font-weight:600;
+  border-radius:18px 4px 18px 18px;
+  box-shadow:0 4px 14px rgba(62,207,198,.25);
+}
+.bubble.gold{
+  background:linear-gradient(135deg,#a07830,var(--gold));
+  color:var(--bg);font-weight:600;
+  border-radius:4px 18px 18px 18px;
+  box-shadow:0 4px 14px rgba(200,168,75,.2);
+}
+.bubble.sticker{
+  background:transparent;border:none;
+  font-size:52px;line-height:1;padding:4px 8px;
+}
+
+/* date sep */
+.date-sep{
+  display:flex;align-items:center;gap:10px;
+  margin:8px 0;
+}
+.date-sep::before,.date-sep::after{content:'';flex:1;height:1px;background:var(--border2);}
+.date-sep span{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;}
+
+/* typing */
+.typing{
+  padding:4px 16px 6px;
+  font-size:12px;color:var(--muted);
+  display:flex;align-items:center;gap:7px;
+  min-height:26px;flex-shrink:0;
+}
+.t-dots{display:flex;gap:3px;align-items:center;}
+.t-dots span{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--muted);
+  animation:td 1.3s ease-in-out infinite;
+}
+.t-dots span:nth-child(2){animation-delay:.18s;}
+.t-dots span:nth-child(3){animation-delay:.36s;}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
+
+/* INPUT */
+.inp-area{padding:8px 16px 14px;flex-shrink:0;}
+.inp-box{
+  display:flex;align-items:flex-end;gap:8px;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:24px;padding:6px 8px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.inp-box:focus-within{
+  border-color:rgba(62,207,198,.3);
+  box-shadow:0 0 0 3px rgba(62,207,198,.06);
+}
+.i-btn{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+  flex-shrink:0;transition:all .2s;
+}
+.i-btn:hover{color:var(--teal);background:rgba(62,207,198,.08);}
+.msg-inp{
+  flex:1;background:none;border:none;outline:none;
+  font-family:'Cairo',sans-serif;font-size:14px;color:var(--white);
+  padding:6px 4px;resize:none;
+  min-height:34px;max-height:120px;line-height:1.5;
+  align-self:center;
+}
+.msg-inp::placeholder{color:var(--muted);}
+.send-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--teal);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--bg);flex-shrink:0;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 3px 12px rgba(62,207,198,.3);
+}
+.send-btn:hover{transform:scale(1.08);box-shadow:0 4px 18px rgba(62,207,198,.45);}
+.send-btn:active{transform:scale(.94);}
+
+/* EMOJI PANEL */
+.emoji-panel{
+  position:absolute;bottom:72px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:16px;padding:12px;width:min(320px,90vw);
+  z-index:50;box-shadow:0 16px 50px rgba(0,0,0,.7);
+  display:none;
+}
+.emoji-panel.show{display:block;}
+.e-search{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:8px;padding:7px 12px;font-family:'Cairo',sans-serif;
+  font-size:13px;color:var(--white);outline:none;margin-bottom:8px;
+}
+.e-search::placeholder{color:var(--muted);}
+.e-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:180px;overflow-y:auto;}
+.e-btn{
+  aspect-ratio:1;border-radius:6px;border:none;background:none;
+  font-size:20px;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.e-btn:hover{background:var(--bg4);transform:scale(1.2);}
+
+/* STICKER PANEL */
+.stk-panel{
+  position:absolute;bottom:72px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:16px;padding:12px;width:min(260px,90vw);
+  z-index:50;box-shadow:0 16px 50px rgba(0,0,0,.7);
+  display:none;
+}
+.stk-panel.show{display:block;}
+.stk-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px;}
+.stk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.stk-btn{
+  aspect-ratio:1;border-radius:10px;border:1px solid var(--border2);
+  background:var(--bg3);font-size:32px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.stk-btn:hover{background:rgba(62,207,198,.08);border-color:var(--border);transform:scale(1.06);}
+
+/* ══════════════════════════════
+   MOBILE TOPBAR
+══════════════════════════════ */
+.m-top{
+  display:none;height:50px;flex-shrink:0;
+  background:var(--bg2);border-bottom:1px solid var(--border2);
+  align-items:center;padding:0 12px;gap:8px;
+}
+.m-srv-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:800;color:var(--white);
+  background:rgba(255,255,255,.05);
+  padding:5px 10px;border-radius:8px;border:none;cursor:pointer;
+}
+.m-ch-name{font-size:13px;color:var(--teal);font-weight:700;margin-right:auto;}
+.m-tbtn{
+  width:32px;height:32px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+}
+.m-tbtn:hover{background:var(--bg3);color:var(--white);}
+
+/* ══════════════════════════════
+   MOBILE CHANNEL TABS (below topbar)
+══════════════════════════════ */
+.m-tabs{
+  display:none;
+  overflow-x:auto;padding:8px 12px 0;
+  background:var(--bg2);border-bottom:1px solid var(--border2);
+  gap:6px;flex-shrink:0;
+}
+.m-tabs::-webkit-scrollbar{height:0;}
+.m-tab{
+  display:flex;align-items:center;gap:5px;
+  padding:6px 12px 8px;
+  font-size:13px;font-weight:700;color:var(--muted);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  border-bottom:2px solid transparent;border-radius:8px 8px 0 0;
+  transition:all .15s;background:none;border-top:none;border-inline:none;
+}
+.m-tab:hover{color:var(--white);}
+.m-tab.act{color:var(--white);border-bottom-color:var(--teal);background:rgba(62,207,198,.06);}
+
+/* ══════════════════════════════
+   BOTTOM NAV
+══════════════════════════════ */
+.b-nav{
+  display:none;height:54px;flex-shrink:0;
+  background:var(--bg2);border-top:1px solid var(--border2);
+  justify-content:space-around;align-items:center;
+}
+.bn-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  color:var(--muted2);background:none;border:none;cursor:pointer;
+  padding:0 12px;transition:color .2s;position:relative;
+}
+.bn-btn.act{color:var(--teal);}
+.bn-btn svg{width:20px;height:20px;}
+.bn-btn span{font-size:9px;font-weight:700;}
+.bn-badge::after{
+  content:'3';position:absolute;top:0;right:8px;
+  background:#f87171;color:#fff;font-size:8px;font-weight:800;
+  padding:1px 4px;border-radius:7px;
+}
+
+/* ══════════════════════════════
+   DRAWERS
+══════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:80;opacity:0;pointer-events:none;
+  transition:opacity .3s;backdrop-filter:blur(3px);
+}
+.overlay.show{opacity:1;pointer-events:all;}
+.drawer{
+  position:fixed;right:0;top:0;bottom:0;z-index:90;
+  transform:translateX(105%);
+  transition:transform .32s cubic-bezier(.16,1,.3,1);
+  display:flex;flex-direction:column;
+}
+.drawer.open{transform:none;}
+.d-srv{width:260px;background:var(--bg2);border-left:1px solid var(--border2);}
+.d-ch{width:260px;background:var(--bg2);border-left:1px solid var(--border2);}
+.drw-head{
+  padding:14px 16px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.drw-title{font-size:14px;font-weight:900;color:var(--white);}
+.drw-close{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+}
+.drw-srv-list{flex:1;overflow-y:auto;padding:10px;}
+.drw-srv-item{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 10px;border-radius:10px;cursor:pointer;
+  margin-bottom:5px;transition:background .15s;
+}
+.drw-srv-item:hover{background:var(--bg3);}
+.drw-srv-item.act{background:rgba(62,207,198,.07);}
+.drw-srv-ic{
+  width:44px;height:44px;border-radius:13px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;
+}
+.drw-srv-name{font-size:13px;font-weight:800;color:var(--white);}
+.drw-srv-count{font-size:11px;color:var(--muted);}
+.drw-add{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 10px;border-radius:10px;cursor:pointer;
+  border:1.5px dashed var(--muted2);margin-top:4px;
+  transition:all .2s;
+}
+.drw-add:hover{border-color:var(--teal);background:rgba(62,207,198,.04);}
+.drw-add-ic{
+  width:44px;height:44px;border-radius:13px;
+  border:1.5px dashed var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--teal);
+}
+
+/* ══════════════════════════════
+   RESPONSIVE
+══════════════════════════════ */
+@media(max-width:860px){
+  .left-panel,.chat-top{display:none;}
+  .m-top,.m-tabs,.b-nav{display:flex;}
+  .ch-tabs{display:none;}
+  .inp-area{padding:6px 10px 10px;}
+  .msgs{padding:10px;}
+  .bubble{font-size:13px;}
+}
+
+/* animations */
+@keyframes msgIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.msg-new{animation:msgIn .22s ease both;}
+</style>
+</head>
+<body>
+
+<!-- ══ SPLASH ══ -->
+<div id="splash">
+  <img class="splash-logo" id="splashImg"
+       src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png"
+       alt="Kove"
+       onerror="this.style.display='none';document.getElementById('splashFallback').style.display='flex'"/>
+  <div class="splash-logo-fallback" id="splashFallback" style="display:none">
+    <svg width="50" height="50" viewBox="0 0 28 28" fill="none">
+      <path d="M8 4L8 24M8 14L20 4M8 14L20 24" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="splash-name">KOVE</div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- ══ MOBILE TOP ══ -->
+<div class="m-top" id="mTop">
+  <button class="m-srv-btn" onclick="openDrw('srv')">
+    <svg width="12" height="12" viewBox="0 0 28 28" fill="none"><path d="M8 4L8 24M8 14L20 4M8 14L20 24" stroke="#3ecfc6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    جيمرز مصر
+    <svg width="10" height="10" fill="none" stroke="#4a6a82" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <span class="m-ch-name" id="mChName"># عام</span>
+  <button class="m-tbtn"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+  <button class="m-tbtn" onclick="openDrw('ch')"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+</div>
+
+<!-- ══ MOBILE TABS ══ -->
+<div class="m-tabs" id="mTabs">
+  <button class="m-tab act" onclick="switchTabM(this,'عام')">
+    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>عام
+  </button>
+  <button class="m-tab" onclick="switchTabM(this,'أخبار')">
+    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>أخبار
+    <span class="tab-badge">3</span>
+  </button>
+  <button class="m-tab" onclick="switchTabM(this,'دعم')">
+    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>دعم
+  </button>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app" style="flex:1;overflow:hidden;">
+<div style="display:flex;height:100%;flex-direction:column;">
+<div style="display:flex;flex:1;overflow:hidden;">
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <!-- server strip -->
+  <div class="srv-strip">
+    <div class="srv-ic" style="background:linear-gradient(135deg,var(--teal-d),var(--teal));padding:0;overflow:hidden;">
+      <img src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png" style="width:100%;height:100%;object-fit:contain;padding:4px;" onerror="this.parentElement.innerHTML='<svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;0 0 28 28&quot; fill=&quot;none&quot;><path d=&quot;M8 4L8 24M8 14L20 4M8 14L20 24&quot; stroke=&quot;white&quot; stroke-width=&quot;3&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;/></svg>'"/>
+    </div>
+    <div class="srv-ic act">ج</div>
+    <div class="srv-ic">م</div>
+    <div class="srv-ic" style="background:linear-gradient(135deg,#166534,#15803d);color:#fff">⚽</div>
+    <div class="srv-ic add"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+  </div>
+  <!-- server name -->
+  <div class="srv-name-bar">
+    <span class="srv-name-text">جيمرز مصر</span>
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <!-- channels -->
+  <div class="ch-list">
+    <div class="ch-cat">قنوات نصية <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <div class="ch-row act" onclick="switchCh(this,'عام')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>عام</div>
+    <div class="ch-row unread" onclick="switchCh(this,'أخبار')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>أخبار<span class="ch-badge">3</span></div>
+    <div class="ch-row" onclick="switchCh(this,'دعم')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>دعم</div>
+    <div class="ch-row" onclick="switchCh(this,'إعلانات')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>إعلانات</div>
+    <div class="ch-cat" style="margin-top:6px">قنوات صوتية <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <div class="ch-row"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>لوبي</div>
+    <div class="ch-row"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>جيمنج</div>
+  </div>
+  <!-- user bar -->
+  <div class="user-bar">
+    <div class="u-av">م<div class="u-dot"></div></div>
+    <div class="u-info"><div class="u-name">مالك</div><div class="u-tag">@malek</div></div>
+    <div class="u-btns">
+      <button class="u-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <button class="u-btn"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT AREA -->
+<div class="chat-area">
+  <!-- desktop tabs -->
+  <div class="ch-tabs" id="chTabs">
+    <div class="ch-tab act" onclick="switchTab(this,'عام')">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>عام
+    </div>
+    <div class="ch-tab" onclick="switchTab(this,'أخبار')">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>أخبار
+      <span class="tab-badge">3</span>
+    </div>
+    <div class="ch-tab" onclick="switchTab(this,'دعم')">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>دعم
+    </div>
+    <div class="ch-tab" onclick="switchTab(this,'إعلانات')">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>إعلانات
+    </div>
+    <div style="margin-right:auto;display:flex;gap:3px;">
+      <button class="ct-btn"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <button class="ct-btn"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></button>
+    </div>
+  </div>
+
+  <!-- messages -->
+  <div class="msgs" id="msgs">
+    <div class="msg-wrap" id="msgWrap">
+      <div class="date-sep"><span>اليوم</span></div>
+
+      <!-- msg 1: ahmed -->
+      <div class="msg-group">
+        <div class="bubble-row">
+          <div class="b-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">أ</div>
+          <div class="b-content">
+            <div class="b-meta"><span class="b-name" style="color:#3ecfc6">أحمد</span><span class="b-time">٩:١٨ م</span></div>
+            <div class="bubble other">السلام عليكم يا جماعة 👋</div>
+          </div>
+        </div>
+        <div class="bubble-row">
+          <div class="b-av hidden"></div>
+          <div class="b-content">
+            <div class="bubble other">في أخبار جديدة عن التحديث الجديد؟ 🔥</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- msg 2: sara -->
+      <div class="msg-group" style="margin-top:8px">
+        <div class="bubble-row">
+          <div class="b-av" style="background:linear-gradient(135deg,#c8a84b,#a07830)">س</div>
+          <div class="b-content">
+            <div class="b-meta"><span class="b-name" style="color:#c8a84b">سارة</span><span class="b-time">٩:٢٢ م</span></div>
+            <div class="bubble gold">وعليكم السلام! أيوه سمعت إن Kove Bot هيتحدث 🤖</div>
+          </div>
+        </div>
+        <div class="bubble-row">
+          <div class="b-av hidden"></div>
+          <div class="b-content">
+            <div class="bubble other">وهيضيف emoji picker وstickers جديدة كمان 🎉</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- msg 3: mahmoud -->
+      <div class="msg-group" style="margin-top:8px">
+        <div class="bubble-row">
+          <div class="b-av" style="background:linear-gradient(135deg,#7c6fe0,#5a4fcf)">م</div>
+          <div class="b-content">
+            <div class="b-meta"><span class="b-name" style="color:#9d8ff5">محمود</span><span class="b-time">٩:٢٥ م</span></div>
+            <div class="bubble other">جامد جداً! متى هيتنزل التحديث؟ 🚀</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- msg 4: karim sticker -->
+      <div class="msg-group" style="margin-top:8px">
+        <div class="bubble-row">
+          <div class="b-av" style="background:linear-gradient(135deg,#f87171,#dc2626)">ك</div>
+          <div class="b-content">
+            <div class="b-meta"><span class="b-name" style="color:#f87171">كريم</span><span class="b-time">٩:٢٧ م</span></div>
+            <div class="bubble sticker">🎮</div>
+          </div>
+        </div>
+        <div class="bubble-row">
+          <div class="b-av hidden"></div>
+          <div class="b-content">
+            <div class="bubble other">التيم شغال عليه بجد، قريب إن شاء الله ✨</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- mine -->
+      <div class="msg-group" style="margin-top:8px">
+        <div class="bubble-row mine">
+          <div class="b-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">م</div>
+          <div class="b-content">
+            <div class="b-meta" style="justify-content:flex-end"><span class="b-time">٩:٢٩ م</span><span class="b-name" style="color:#3ecfc6">أنت</span></div>
+            <div class="bubble mine">ربنا يوفقهم! المنتج ده بيكبر بسرعة 💪</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- typing -->
+  <div class="typing">
+    <div class="t-dots"><span></span><span></span><span></span></div>
+    <span>سارة تكتب...</span>
+  </div>
+
+  <!-- input -->
+  <div class="inp-area" style="position:relative;">
+    <div class="emoji-panel" id="emojiP"></div>
+    <div class="stk-panel" id="stkP"></div>
+    <div class="inp-box">
+      <button class="i-btn" title="إرفاق">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <textarea class="msg-inp" id="msgInp" placeholder="اكتب رسالة في #عام" rows="1" onkeydown="hKey(event)" oninput="aResize(this)"></textarea>
+      <button class="i-btn" title="Stickers" onclick="togStk()">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </button>
+      <button class="i-btn" title="إيموجي" onclick="togEmoji()">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      </button>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /flex row -->
+
+<!-- BOTTOM NAV -->
+<div class="b-nav">
+  <button class="bn-btn act" onclick="setBnav(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>الشات</span>
+  </button>
+  <button class="bn-btn" onclick="setBnav(this);openDrw('srv')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    <span>السيرفرات</span>
+  </button>
+  <button class="bn-btn bn-badge" onclick="setBnav(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    <span>DMs</span>
+  </button>
+  <button class="bn-btn" onclick="setBnav(this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+    <span>أنا</span>
+  </button>
+</div>
+
+</div><!-- /flex col -->
+</div><!-- /app -->
+
+<!-- OVERLAY + DRAWERS -->
+<div class="overlay" id="ov" onclick="closeDrws()"></div>
+
+<div class="drawer d-srv" id="dSrv">
+  <div class="drw-head"><span class="drw-title">السيرفرات</span><button class="drw-close" onclick="closeDrws()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="drw-srv-list">
+    <div class="drw-srv-item act"><div class="drw-srv-ic" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">ج</div><div><div class="drw-srv-name">جيمرز مصر</div><div class="drw-srv-count">١٢٤٣ عضو</div></div></div>
+    <div class="drw-srv-item"><div class="drw-srv-ic" style="background:linear-gradient(135deg,#c8a84b,#a07830)">م</div><div><div class="drw-srv-name">موسيقى وراب</div><div class="drw-srv-count">٨٧٦ عضو</div></div></div>
+    <div class="drw-srv-item"><div class="drw-srv-ic" style="background:linear-gradient(135deg,#166534,#15803d)">⚽</div><div><div class="drw-srv-name">كرة القدم</div><div class="drw-srv-count">٢١٠٥ عضو</div></div></div>
+    <div class="drw-add"><div class="drw-add-ic"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div><div class="drw-srv-name" style="color:var(--teal)">إضافة سيرفر</div><div class="drw-srv-count">ابني مجتمعك</div></div></div>
+  </div>
+</div>
+
+<div class="drawer d-ch" id="dCh">
+  <div class="drw-head"><span class="drw-title">جيمرز مصر</span><button class="drw-close" onclick="closeDrws()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+  <div class="ch-list" style="flex:1;overflow-y:auto;padding:4px 0 8px;">
+    <div class="ch-cat">قنوات نصية</div>
+    <div class="ch-row act" onclick="switchChD(this,'عام')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>عام</div>
+    <div class="ch-row unread" onclick="switchChD(this,'أخبار')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>أخبار<span class="ch-badge">3</span></div>
+    <div class="ch-row" onclick="switchChD(this,'دعم')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>دعم</div>
+  </div>
+  <div class="user-bar" style="background:var(--bg);border-top:1px solid var(--border2);">
+    <div class="u-av">م<div class="u-dot"></div></div>
+    <div class="u-info"><div class="u-name">مالك</div><div class="u-tag">@malek</div></div>
+  </div>
+</div>
+
+<script>
+// ── SPLASH ──
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.getElementById('splash').classList.add('hide');
+    document.getElementById('app').classList.add('show');
+    document.getElementById('msgs').scrollTop = 99999;
+  }, 2000);
+});
+
+// ── EMOJI ──
+var emojis = ['😀','😂','😍','🥰','😎','🤩','😭','😤','🤔','😴','🥺','😈','👻','🤖','💀','🎭','👋','👍','👎','🙌','👏','🤝','✌️','🤞','👌','🤙','💪','🎮','🏆','🔥','💻','📱','🎵','🎸','⚽','🎯','💡','🔑','🎁','💎','🚀','⚡','❤️','💛','💙','💜','🖤','💔','💯','✅','❌','⭐','🌟','💫','🔔','🎉','🎊'];
+
+function buildEmoji(filter) {
+  var p = document.getElementById('emojiP');
+  var list = filter ? emojis.filter(function(e){return e.includes(filter);}) : emojis;
+  p.innerHTML = '<input class="e-search" placeholder="ابحث..." oninput="buildEmoji(this.value)"/><div class="e-grid">' +
+    list.map(function(e){return '<button class="e-btn" onclick="insertE(\''+e+'\')">'+e+'</button>';}).join('') +
+    '</div>';
+}
+
+function insertE(e) {
+  document.getElementById('msgInp').value += e;
+  document.getElementById('msgInp').focus();
+  document.getElementById('emojiP').classList.remove('show');
+}
+
+function togEmoji() {
+  var ep = document.getElementById('emojiP');
+  var sp = document.getElementById('stkP');
+  sp.classList.remove('show');
+  if(!ep.classList.contains('show')) buildEmoji('');
+  ep.classList.toggle('show');
+}
+
+// ── STICKERS ──
+var stickers = ['🎮','🏆','🔥','💎','🚀','⚡','🎵','🌟','💯','🤖','👻','🎉','❤️','💪','🎯','🌈'];
+
+function buildStk() {
+  document.getElementById('stkP').innerHTML =
+    '<div class="stk-title">الـ Stickers</div><div class="stk-grid">' +
+    stickers.map(function(s){return '<button class="stk-btn" onclick="sendStk(\''+s+'\')">'+s+'</button>';}).join('') +
+    '</div>';
+}
+
+function togStk() {
+  var sp = document.getElementById('stkP');
+  var ep = document.getElementById('emojiP');
+  ep.classList.remove('show');
+  if(!sp.classList.contains('show')) buildStk();
+  sp.classList.toggle('show');
+}
+
+function sendStk(s) {
+  addMsg(null, null, null, s, true);
+  document.getElementById('stkP').classList.remove('show');
+}
+
+// ── SEND ──
+function addMsg(name, color, bg, text, isStk) {
+  var wrap = document.getElementById('msgWrap');
+  var grp = document.createElement('div');
+  grp.className = 'msg-group msg-new';
+  grp.style.marginTop = '8px';
+
+  if(isStk) {
+    grp.innerHTML = [
+      '<div class="bubble-row mine">',
+        '<div class="b-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">م</div>',
+        '<div class="b-content">',
+          '<div class="b-meta" style="justify-content:flex-end">',
+            '<span class="b-time">'+now()+'</span>',
+            '<span class="b-name" style="color:#3ecfc6">أنت</span>',
+          '</div>',
+          '<div class="bubble sticker">'+text+'</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  } else {
+    grp.innerHTML = [
+      '<div class="bubble-row mine">',
+        '<div class="b-av" style="background:linear-gradient(135deg,#3ecfc6,#2a9d94)">م</div>',
+        '<div class="b-content">',
+          '<div class="b-meta" style="justify-content:flex-end">',
+            '<span class="b-time">'+now()+'</span>',
+            '<span class="b-name" style="color:#3ecfc6">أنت</span>',
+          '</div>',
+          '<div class="bubble mine">'+text.replace(/</g,'&lt;')+'</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }
+  wrap.appendChild(grp);
+  document.getElementById('msgs').scrollTop = 99999;
+}
+
+function now() {
+  return new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})+' م';
+}
+
+function sendMsg() {
+  var inp = document.getElementById('msgInp');
+  var txt = inp.value.trim();
+  if(!txt) return;
+  addMsg(null,null,null,txt,false);
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('emojiP').classList.remove('show');
+  document.getElementById('stkP').classList.remove('show');
+}
+
+function hKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function aResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+
+// ── CHANNEL SWITCH ──
+function switchCh(el, name) {
+  document.querySelectorAll('.left-panel .ch-row').forEach(function(c){c.classList.remove('act');});
+  el.classList.add('act'); el.classList.remove('unread');
+  var b=el.querySelector('.ch-badge'); if(b) b.remove();
+  switchTab(document.querySelector('.ch-tab'), name);
+  document.getElementById('msgInp').placeholder = 'اكتب رسالة في #'+name;
+}
+
+function switchTab(el, name) {
+  document.querySelectorAll('.ch-tab').forEach(function(t){t.classList.remove('act');});
+  if(el) el.classList.add('act');
+  var tb = el ? el.querySelector('.tab-badge') : null; if(tb) tb.remove();
+  document.getElementById('msgInp').placeholder = 'اكتب رسالة في #'+name;
+}
+
+function switchChD(el, name) {
+  document.querySelectorAll('#dCh .ch-row').forEach(function(c){c.classList.remove('act');});
+  el.classList.add('act'); el.classList.remove('unread');
+  var b=el.querySelector('.ch-badge'); if(b) b.remove();
+  document.getElementById('mChName').textContent = '# '+name;
+  document.getElementById('msgInp').placeholder = 'اكتب رسالة في #'+name;
+  closeDrws();
+}
+
+function switchTabM(el, name) {
+  document.querySelectorAll('.m-tab').forEach(function(t){t.classList.remove('act');});
+  el.classList.add('act');
+  var tb = el.querySelector('.tab-badge'); if(tb) tb.remove();
+  document.getElementById('mChName').textContent = '# '+name;
+  document.getElementById('msgInp').placeholder = 'اكتب رسالة في #'+name;
+}
+
+// ── DRAWERS ──
+function openDrw(w) {
+  document.getElementById('ov').classList.add('show');
+  document.getElementById(w==='srv'?'dSrv':'dCh').classList.add('open');
+}
+function closeDrws() {
+  document.getElementById('ov').classList.remove('show');
+  document.getElementById('dSrv').classList.remove('open');
+  document.getElementById('dCh').classList.remove('open');
+}
+
+// ── BOTTOM NAV ──
+function setBnav(btn) {
+  document.querySelectorAll('.bn-btn').forEach(function(b){b.classList.remove('act');});
+  btn.classList.add('act');
+}
+
+// ── CLOSE PANELS ──
+document.addEventListener('click', function(e) {
+  var ep = document.getElementById('emojiP');
+  var sp = document.getElementById('stkP');
+  if(ep.classList.contains('show') && !ep.contains(e.target) && !e.target.closest('.i-btn')) ep.classList.remove('show');
+  if(sp.classList.contains('show') && !sp.contains(e.target) && !e.target.closest('.i-btn')) sp.classList.remove('show');
+});
+</script>
+</body>
+</html>
