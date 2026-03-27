@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kove — الأصدقاء</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#040b14;--bg2:#071320;--bg3:#0a1a2e;--bg4:#0d2038;
+  --teal:#3ecfc6;--teal-d:#2a9d94;--gold:#c8a84b;
+  --white:#e8f4f8;--muted:#4a6a82;--muted2:#2a4558;
+  --b2:rgba(255,255,255,.05);--border:rgba(62,207,198,.1);
+  --online:#22c55e;--idle:#facc15;--dnd:#f87171;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--white);font-family:'Cairo',sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
+button{font-family:'Cairo',sans-serif;cursor:pointer;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px;}
+
+/* NAV */
+nav{height:52px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--b2);display:flex;align-items:center;padding:0 16px;gap:10px;}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;}
+.nav-logo img{width:28px;height:28px;object-fit:contain;}
+.nav-logo-n{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:2px;background:linear-gradient(120deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-sep{width:1px;height:24px;background:var(--b2);}
+.nav-tabs{display:flex;gap:2px;flex:1;}
+.nav-tab{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:700;color:var(--muted);background:none;border:none;transition:all .15s;position:relative;}
+.nav-tab:hover{background:rgba(255,255,255,.04);color:var(--white);}
+.nav-tab.act{background:rgba(62,207,198,.1);color:var(--teal);}
+.nav-tab .cnt{display:inline-flex;align-items:center;justify-content:center;background:var(--dnd);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;padding:0 4px;margin-right:5px;}
+.add-friend-btn{display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;background:rgba(62,207,198,.1);border:1px solid var(--border);color:var(--teal);font-size:13px;font-weight:700;transition:all .2s;}
+.add-friend-btn:hover{background:var(--teal);color:var(--bg);}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:20px;}
+.section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;padding:0 0 10px;border-bottom:1px solid var(--b2);margin-bottom:12px;}
+
+/* FRIEND CARD */
+.friend-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;transition:background .15s;position:relative;}
+.friend-item:hover{background:var(--bg3);}
+.friend-item:hover .f-acts{opacity:1;}
+.f-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;position:relative;overflow:hidden;}
+.f-av img{width:100%;height:100%;object-fit:cover;}
+.f-st{position:absolute;bottom:1px;left:1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--bg);}
+.st-on{background:var(--online);}
+.st-id{background:var(--idle);}
+.st-off{background:var(--muted2);}
+.f-info{flex:1;min-width:0;}
+.f-name{font-size:14px;font-weight:800;color:var(--white);}
+.f-status{font-size:12px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.f-acts{opacity:0;display:flex;gap:6px;transition:opacity .15s;}
+.f-btn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--bg4);border:1px solid var(--b2);color:var(--muted);transition:all .15s;}
+.f-btn:hover{background:var(--teal);color:var(--bg);border-color:var(--teal);}
+.f-btn.red:hover{background:var(--dnd);color:#fff;border-color:var(--dnd);}
+.f-btn.green:hover{background:var(--online);color:#fff;border-color:var(--online);}
+
+/* REQUEST CARD */
+.req-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--b2);margin-bottom:8px;transition:border-color .2s;}
+.req-item:hover{border-color:var(--border);}
+.req-label{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* ADD FRIEND PANEL */
+.add-panel{background:var(--bg2);border:1px solid var(--b2);border-radius:14px;padding:20px;margin-bottom:20px;}
+.add-title{font-size:15px;font-weight:800;margin-bottom:6px;}
+.add-desc{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.add-row{display:flex;gap:8px;}
+.add-inp{flex:1;background:var(--bg3);border:1px solid var(--b2);border-radius:8px;padding:10px 14px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--white);outline:none;transition:border-color .2s;}
+.add-inp:focus{border-color:var(--border);}
+.add-inp::placeholder{color:var(--muted);}
+.add-submit{padding:10px 20px;border-radius:8px;background:var(--teal);color:var(--bg);border:none;font-size:14px;font-weight:800;transition:opacity .2s;}
+.add-submit:hover{opacity:.85;}
+.add-msg{font-size:13px;margin-top:10px;padding:8px 12px;border-radius:8px;display:none;}
+.add-msg.ok{background:rgba(34,197,94,.1);color:var(--online);border:1px solid rgba(34,197,94,.2);display:block;}
+.add-msg.err{background:rgba(248,113,113,.1);color:var(--dnd);border:1px solid rgba(248,113,113,.2);display:block;}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-text{font-size:14px;}
+
+/* LOADING */
+.lsp{width:24px;height:24px;border:2px solid var(--b2);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;margin:40px auto;display:block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TABS CONTENT */
+.tab-content{display:none;}
+.tab-content.show{display:block;}
+
+/* MOBILE NAV */
+@media(max-width:600px){
+  .nav-tab span{display:none;}
+  .add-friend-btn span{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="app.html" class="nav-logo">
+    <img src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png" alt="Kove"
+         onerror="this.style.display='none'"/>
+    <span class="nav-logo-n">KOVE</span>
+  </a>
+  <div class="nav-sep"></div>
+  <div class="nav-tabs">
+    <button class="nav-tab act" onclick="switchTab('all',this)"><span>الكل</span></button>
+    <button class="nav-tab" onclick="switchTab('online',this)"><span>أونلاين</span></button>
+    <button class="nav-tab" onclick="switchTab('requests',this)">
+      <span class="cnt" id="reqCnt" style="display:none">0</span>
+      <span>الطلبات</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab('add',this)"><span>إضافة صديق</span></button>
+  </div>
+  <button class="add-friend-btn" onclick="switchTab('add',null)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>إضافة صديق</span>
+  </button>
+</nav>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ALL FRIENDS -->
+  <div class="tab-content show" id="tab-all">
+    <div class="lsp" id="allLoading"></div>
+    <div id="allFriends"></div>
+  </div>
+
+  <!-- ONLINE -->
+  <div class="tab-content" id="tab-online">
+    <div id="onlineFriends"></div>
+  </div>
+
+  <!-- REQUESTS -->
+  <div class="tab-content" id="tab-requests">
+    <div id="incomingReqs"></div>
+    <div id="outgoingReqs"></div>
+  </div>
+
+  <!-- ADD FRIEND -->
+  <div class="tab-content" id="tab-add">
+    <div class="add-panel">
+      <div class="add-title">إضافة صديق</div>
+      <div class="add-desc">ابعت طلب صداقة باسم المستخدم بتاعه (@username)</div>
+      <div class="add-row">
+        <input class="add-inp" id="addInp" placeholder="@username" type="text"/>
+        <button class="add-submit" onclick="sendFriendReq()">إرسال الطلب</button>
+      </div>
+      <div class="add-msg" id="addMsg"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var SB_URL='https://votiamtckjctbidhuxap.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdGlhbXRja2pjdGJpZGh1eGFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzU3NDcsImV4cCI6MjA4OTUxMTc0N30.iOcJ51FsEj2qsv8G2UqBshFe5NGw9x1OUw57z9vvu0Q';
+var sb=window.supabase.createClient(SB_URL,SB_KEY);
+var user=null,allFriends=[],pendingReqs=[];
+var COLORS=['#3ecfc6','#c8a84b','#7c6fe0','#f87171','#22c55e','#f97316','#ec4899','#06b6d4'];
+function getColor(s){var h=0;for(var i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return COLORS[Math.abs(h)%COLORS.length];}
+function getLetter(n){return n?n.charAt(0).toUpperCase():'?';}
+
+window.addEventListener('load',async function(){
+  var {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+  user=session.user;
+  await loadFriends();
+});
+
+async function loadFriends(){
+  document.getElementById('allLoading').style.display='block';
+
+  // accepted friendships
+  var {data:accepted}=await sb.from('friendships')
+    .select('id,user_id,friend_id,status,profiles!friendships_friend_id_fkey(id,name,username,avatar_url),profiles!friendships_user_id_fkey(id,name,username,avatar_url)')
+    .or('user_id.eq.'+user.id+',friend_id.eq.'+user.id)
+    .eq('status','accepted');
+
+  // pending requests
+  var {data:pending}=await sb.from('friendships')
+    .select('id,user_id,friend_id,status,profiles!friendships_user_id_fkey(id,name,username,avatar_url)')
+    .eq('friend_id',user.id)
+    .eq('status','pending');
+
+  // outgoing
+  var {data:outgoing}=await sb.from('friendships')
+    .select('id,user_id,friend_id,status,profiles!friendships_friend_id_fkey(id,name,username,avatar_url)')
+    .eq('user_id',user.id)
+    .eq('status','pending');
+
+  document.getElementById('allLoading').style.display='none';
+
+  allFriends=accepted||[];
+  pendingReqs=pending||[];
+
+  // update badge
+  var cnt=pendingReqs.length;
+  var badge=document.getElementById('reqCnt');
+  if(cnt>0){badge.textContent=cnt;badge.style.display='inline-flex';}
+  else{badge.style.display='none';}
+
+  renderAll(allFriends);
+  renderOnline(allFriends);
+  renderRequests(pendingReqs,outgoing||[]);
+}
+
+function getFriendProfile(f){
+  if(f.user_id===user.id) return f['profiles!friendships_friend_id_fkey']||f.profiles;
+  return f['profiles!friendships_user_id_fkey']||f.profiles;
+}
+
+function friendCard(f){
+  var p=getFriendProfile(f)||{};
+  var name=p.name||p.username||'مجهول';
+  var col=getColor(name);
+  var div=document.createElement('div');
+  div.className='friend-item';
+  div.innerHTML=[
+    '<div class="f-av" style="background:linear-gradient(135deg,'+col+','+col+'99)">',
+      (p.avatar_url?'<img src="'+p.avatar_url+'" onerror="this.parentElement.textContent=\''+getLetter(name)+'\'"/>':getLetter(name)),
+      '<div class="f-st st-on"></div>',
+    '</div>',
+    '<div class="f-info">',
+      '<div class="f-name">'+name+'</div>',
+      '<div class="f-status">@'+(p.username||'')+'</div>',
+    '</div>',
+    '<div class="f-acts">',
+      '<button class="f-btn" title="رسالة خاصة" onclick="openDM(\''+p.id+'\')">',
+        '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      '</button>',
+      '<button class="f-btn red" title="إزالة صديق" onclick="removeFriend(\''+f.id+'\',this)">',
+        '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      '</button>',
+    '</div>'
+  ].join('');
+  return div;
+}
+
+function renderAll(friends){
+  var el=document.getElementById('allFriends');
+  el.innerHTML='';
+  if(!friends.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">مفيش أصدقاء بعد — ابدأ بإضافة حد!</div></div>';
+    return;
+  }
+  var title=document.createElement('div');
+  title.className='section-title';
+  title.textContent='الأصدقاء — '+friends.length;
+  el.appendChild(title);
+  friends.forEach(function(f){el.appendChild(friendCard(f));});
+}
+
+function renderOnline(friends){
+  var el=document.getElementById('onlineFriends');
+  el.innerHTML='';
+  // for now show all as online (real presence needs websocket/heartbeat)
+  if(!friends.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🟢</div><div class="empty-text">مفيش أصدقاء أونلاين دلوقتي</div></div>';
+    return;
+  }
+  var title=document.createElement('div');
+  title.className='section-title';
+  title.textContent='أونلاين — '+friends.length;
+  el.appendChild(title);
+  friends.forEach(function(f){el.appendChild(friendCard(f));});
+}
+
+function renderRequests(incoming,outgoing){
+  var el=document.getElementById('incomingReqs');
+  var el2=document.getElementById('outgoingReqs');
+  el.innerHTML='';el2.innerHTML='';
+
+  if(incoming.length===0&&outgoing.length===0){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📩</div><div class="empty-text">مفيش طلبات صداقة دلوقتي</div></div>';
+    return;
+  }
+
+  if(incoming.length>0){
+    var t=document.createElement('div');t.className='section-title';t.textContent='طلبات واردة — '+incoming.length;el.appendChild(t);
+    incoming.forEach(function(req){
+      var p=req['profiles!friendships_user_id_fkey']||req.profiles||{};
+      var name=p.name||p.username||'مجهول';
+      var col=getColor(name);
+      var div=document.createElement('div');
+      div.className='req-item';
+      div.innerHTML=[
+        '<div class="f-av" style="background:linear-gradient(135deg,'+col+','+col+'99);width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;">',
+          (p.avatar_url?'<img src="'+p.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent=\''+getLetter(name)+'\'"/>':getLetter(name)),
+        '</div>',
+        '<div style="flex:1;min-width:0;">',
+          '<div class="f-name">'+name+'</div>',
+          '<div class="req-label">@'+(p.username||'')+' • أرسل طلب صداقة</div>',
+        '</div>',
+        '<div style="display:flex;gap:6px;">',
+          '<button class="f-btn green" title="قبول" onclick="acceptReq(\''+req.id+'\',this)">',
+            '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+          '</button>',
+          '<button class="f-btn red" title="رفض" onclick="rejectReq(\''+req.id+'\',this)">',
+            '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+          '</button>',
+        '</div>'
+      ].join('');
+      el.appendChild(div);
+    });
+  }
+
+  if(outgoing.length>0){
+    var t2=document.createElement('div');t2.className='section-title';t2.style.marginTop='20px';t2.textContent='طلبات صادرة — '+outgoing.length;el2.appendChild(t2);
+    outgoing.forEach(function(req){
+      var p=req['profiles!friendships_friend_id_fkey']||req.profiles||{};
+      var name=p.name||p.username||'مجهول';
+      var col=getColor(name);
+      var div=document.createElement('div');
+      div.className='req-item';
+      div.innerHTML=[
+        '<div class="f-av" style="background:linear-gradient(135deg,'+col+','+col+'99);width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;">'+getLetter(name)+'</div>',
+        '<div style="flex:1;min-width:0;">',
+          '<div class="f-name">'+name+'</div>',
+          '<div class="req-label">@'+(p.username||'')+' • في انتظار الرد</div>',
+        '</div>',
+        '<button class="f-btn red" title="إلغاء" onclick="cancelReq(\''+req.id+'\',this)">',
+          '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        '</button>'
+      ].join('');
+      el2.appendChild(div);
+    });
+  }
+}
+
+// ── ACTIONS ──
+async function acceptReq(id,btn){
+  btn.disabled=true;
+  await sb.from('friendships').update({status:'accepted'}).eq('id',id);
+  await loadFriends();
+}
+async function rejectReq(id,btn){
+  btn.disabled=true;
+  await sb.from('friendships').delete().eq('id',id);
+  await loadFriends();
+}
+async function cancelReq(id,btn){
+  btn.disabled=true;
+  await sb.from('friendships').delete().eq('id',id);
+  await loadFriends();
+}
+async function removeFriend(id,btn){
+  btn.disabled=true;
+  await sb.from('friendships').delete().eq('id',id);
+  await loadFriends();
+}
+
+async function openDM(friendId){
+  // find or create DM channel
+  var {data:existing}=await sb.from('dm_channels')
+    .select('id')
+    .or('and(user1_id.eq.'+user.id+',user2_id.eq.'+friendId+'),and(user1_id.eq.'+friendId+',user2_id.eq.'+user.id+')')
+    .single();
+  if(existing){
+    window.location.href='dm.html?channel='+existing.id;
+  } else {
+    var {data:created}=await sb.from('dm_channels').insert({user1_id:user.id,user2_id:friendId}).select('id').single();
+    if(created) window.location.href='dm.html?channel='+created.id;
+  }
+}
+
+async function sendFriendReq(){
+  var inp=document.getElementById('addInp');
+  var msg=document.getElementById('addMsg');
+  var username=inp.value.trim().replace('@','');
+  msg.className='add-msg';
+  if(!username){msg.textContent='أدخل اسم المستخدم';msg.className='add-msg err';return;}
+
+  // find user by username
+  var {data:targetProfile}=await sb.from('profiles').select('id,name,username').eq('username',username).single();
+  if(!targetProfile){msg.textContent='مفيش مستخدم بالاسم ده';msg.className='add-msg err';return;}
+  if(targetProfile.id===user.id){msg.textContent='مش قادر تضيف نفسك 😅';msg.className='add-msg err';return;}
+
+  // check existing
+  var {data:existing}=await sb.from('friendships')
+    .select('id,status')
+    .or('and(user_id.eq.'+user.id+',friend_id.eq.'+targetProfile.id+'),and(user_id.eq.'+targetProfile.id+',friend_id.eq.'+user.id+')')
+    .single();
+
+  if(existing){
+    if(existing.status==='accepted'){msg.textContent='انتو أصدقاء بالفعل!';msg.className='add-msg err';}
+    else{msg.textContent='الطلب اتبعت بالفعل';msg.className='add-msg err';}
+    return;
+  }
+
+  var {error}=await sb.from('friendships').insert({user_id:user.id,friend_id:targetProfile.id,status:'pending'});
+  if(error){msg.textContent='حصل خطأ، حاول تاني';msg.className='add-msg err';}
+  else{
+    msg.textContent='تم إرسال طلب الصداقة لـ @'+username+' ✅';
+    msg.className='add-msg ok';
+    inp.value='';
+    await loadFriends();
+  }
+}
+
+// ── TABS ──
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('show');});
+  document.getElementById('tab-'+name).classList.add('show');
+  document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('act');});
+  if(btn) btn.classList.add('act');
+}
+
+document.getElementById('addInp').addEventListener('keydown',function(e){
+  if(e.key==='Enter') sendFriendReq();
+});
+</script>
+</body>
+</html>
