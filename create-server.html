@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kove — إنشاء سيرفر</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="_layout.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="_layout.js"></script>
+<style>
+.page{flex:1;overflow-y:auto;display:flex;align-items:center;justify-content:center;padding:24px;}
+.card{width:100%;max-width:480px;background:var(--bg2);border:1px solid var(--b2);border-radius:18px;padding:36px 32px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.card-title{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px;}
+.card-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px;line-height:1.7;}
+
+/* ICON PREVIEW */
+.icon-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:24px;}
+.icon-preview{width:80px;height:80px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:white;cursor:pointer;position:relative;transition:transform .2s;user-select:none;}
+.icon-preview:hover{transform:scale(1.05);}
+.icon-preview-label{font-size:12px;color:var(--muted);}
+
+/* URL INPUT for icon */
+.url-input-wrap{width:100%;position:relative;margin-bottom:6px;}
+.url-preview{width:100%;height:48px;object-fit:cover;border-radius:10px;display:none;margin-bottom:8px;}
+
+/* FORM */
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:7px;letter-spacing:.3px;}
+.field input,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:9px;padding:11px 14px;font-family:'Cairo',sans-serif;font-size:14px;color:var(--white);outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus,.field textarea:focus{border-color:var(--border);box-shadow:0 0 0 3px rgba(62,207,198,.06);}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted);}
+.field textarea{resize:none;height:72px;line-height:1.6;}
+.char-count{font-size:11px;color:var(--muted);text-align:left;margin-top:4px;}
+
+/* COLOR PICKER for server */
+.color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;transition:transform .15s,box-shadow .15s;border:2px solid transparent;}
+.color-dot:hover{transform:scale(1.15);}
+.color-dot.sel{border-color:white;box-shadow:0 0 0 2px var(--teal);}
+
+/* ACTIONS */
+.actions{display:flex;gap:10px;margin-top:6px;}
+.btn-main{flex:1;padding:13px;border-radius:9px;border:none;font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;background:var(--teal);color:var(--bg);transition:opacity .2s,transform .2s;}
+.btn-main:hover{opacity:.87;transform:translateY(-1px);}
+.btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-ghost{padding:13px 20px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;background:transparent;color:var(--white);border:1px solid var(--b2);transition:all .2s;}
+.btn-ghost:hover{border-color:var(--muted);background:rgba(255,255,255,.03);}
+
+/* ALERT */
+.alert{padding:11px 14px;border-radius:9px;font-size:13px;margin-bottom:14px;display:none;}
+.alert.show{display:block;}
+.alert.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--online);}
+.alert.err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:var(--dnd);}
+
+/* SPINNER */
+.spin{width:15px;height:15px;border:2px solid rgba(4,11,20,.3);border-top-color:var(--bg);border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+@media(max-width:540px){.card{padding:24px 18px;}.actions{flex-direction:column;}}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <img class="sp-img" src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png" alt="Kove" onerror="this.style.display='none'"/>
+  <div class="sp-name">KOVE</div>
+  <div class="sp-dots"><span></span><span></span><span></span></div>
+</div>
+
+<div id="app" style="flex-direction:column;">
+
+<!-- simple top nav -->
+<nav style="height:52px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--b2);display:flex;align-items:center;padding:0 16px;gap:10px;">
+  <a href="app.html" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+    <img src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png" style="height:28px;width:28px;object-fit:contain;" onerror="this.style.display='none'"/>
+    <span style="font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;letter-spacing:2px;background:linear-gradient(120deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">KOVE</span>
+  </a>
+  <span style="width:1px;height:24px;background:var(--b2);display:block;"></span>
+  <span style="font-size:14px;font-weight:700;color:var(--muted);">إنشاء سيرفر جديد</span>
+  <a href="app.html" style="margin-right:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--muted)'">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    رجوع
+  </a>
+</nav>
+
+<div class="page">
+  <div class="card">
+    <h1 class="card-title">ابني مجتمعك</h1>
+    <p class="card-sub">السيرفر هو مكان انت وأصحابك تتكلموا فيه — ابدأ بإضافة اسم وأيقونة.</p>
+
+    <div class="alert" id="alert"></div>
+
+    <!-- icon preview -->
+    <div class="icon-wrap">
+      <div class="icon-preview" id="iconPreview" onclick="document.getElementById('iconUrlInp').focus()">
+        <span id="iconLetter">؟</span>
+      </div>
+      <span class="icon-preview-label">أيقونة السيرفر (اختياري)</span>
+    </div>
+
+    <!-- icon URL -->
+    <div class="field">
+      <label>رابط صورة الأيقونة (اختياري)</label>
+      <input type="url" id="iconUrlInp" placeholder="https://example.com/image.png" oninput="previewIcon(this.value)"/>
+      <img id="iconUrlImg" class="url-preview" alt="معاينة"/>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">ضع رابط صورة مباشر — سيظهر كأيقونة للسيرفر</div>
+    </div>
+
+    <!-- server name -->
+    <div class="field">
+      <label>اسم السيرفر *</label>
+      <input type="text" id="nameInp" placeholder="سيرفر الجيمرز" maxlength="50" oninput="updatePreview(this.value);updateChar(this.value,50,'nameChar')"/>
+      <div class="char-count" id="nameChar">0 / 50</div>
+    </div>
+
+    <!-- server color -->
+    <div class="field">
+      <label>لون السيرفر</label>
+      <div class="color-row" id="colorRow"></div>
+    </div>
+
+    <!-- description -->
+    <div class="field">
+      <label>وصف السيرفر (اختياري)</label>
+      <textarea id="descInp" placeholder="سيرفر مخصص للجيمرز المصريين..." maxlength="200" oninput="updateChar(this.value,200,'descChar')"></textarea>
+      <div class="char-count" id="descChar">0 / 200</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-ghost" onclick="history.back()">إلغاء</button>
+      <button class="btn-main" id="createBtn" onclick="createServer()">إنشاء السيرفر</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+var COLORS_LIST=['#3ecfc6','#c8a84b','#7c6fe0','#f87171','#22c55e','#f97316','#ec4899','#06b6d4','#8b5cf6','#0ea5e9'];
+var selectedColor=COLORS_LIST[0];
+
+// build color picker
+var cr=document.getElementById('colorRow');
+COLORS_LIST.forEach(function(c,i){
+  var dot=document.createElement('div');
+  dot.className='color-dot'+(i===0?' sel':'');
+  dot.style.background=c;
+  dot.onclick=function(){
+    document.querySelectorAll('.color-dot').forEach(function(d){d.classList.remove('sel');});
+    dot.classList.add('sel');
+    selectedColor=c;
+    updatePreview(document.getElementById('nameInp').value);
+  };
+  cr.appendChild(dot);
+});
+
+function updatePreview(name){
+  var preview=document.getElementById('iconPreview');
+  preview.style.background='linear-gradient(135deg,'+selectedColor+','+selectedColor+'aa)';
+  document.getElementById('iconLetter').textContent=name?name.charAt(0).toUpperCase():'؟';
+}
+
+function previewIcon(url){
+  var img=document.getElementById('iconUrlImg');
+  var preview=document.getElementById('iconPreview');
+  if(url&&url.startsWith('http')){
+    img.src=url;
+    img.style.display='block';
+    img.onerror=function(){img.style.display='none';};
+    preview.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;border-radius:20px;" onerror="this.style.display=\'none\'"/>';
+  } else {
+    img.style.display='none';
+    updatePreview(document.getElementById('nameInp').value);
+  }
+}
+
+function updateChar(val,max,id){
+  document.getElementById(id).textContent=val.length+' / '+max;
+}
+
+function showAlert(msg,type){
+  var el=document.getElementById('alert');
+  el.textContent=msg;el.className='alert show '+type;
+}
+
+function setLoading(on){
+  var btn=document.getElementById('createBtn');
+  btn.disabled=on;
+  btn.innerHTML=on?'<span class="spin"></span>جاري الإنشاء...':'إنشاء السيرفر';
+}
+
+async function createServer(){
+  var {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+  var uid=session.user.id;
+
+  var name=document.getElementById('nameInp').value.trim();
+  var iconUrl=document.getElementById('iconUrlInp').value.trim();
+
+  if(!name){showAlert('أدخل اسم السيرفر','err');return;}
+  if(name.length<2){showAlert('الاسم لازم يكون حرفين على الأقل','err');return;}
+
+  setLoading(true);
+
+  // call create_server function
+  var {data,error}=await sb.rpc('create_server',{p_name:name,p_user_id:uid});
+
+  if(error){
+    setLoading(false);
+    showAlert('حصل خطأ: '+error.message,'err');
+    return;
+  }
+
+  var serverId=data;
+
+  // update icon_url if provided
+  if(iconUrl){
+    await sb.from('servers').update({icon_url:iconUrl}).eq('id',serverId);
+  }
+
+  showAlert('تم إنشاء السيرفر بنجاح! 🎉','ok');
+  setTimeout(function(){window.location.href='app.html?server='+serverId;},1200);
+}
+
+// init
+window.addEventListener('load',async function(){
+  var {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='login.html';return;}
+  updatePreview('');
+  setTimeout(function(){
+    document.getElementById('splash').classList.add('hide');
+    document.getElementById('app').classList.add('show');
+  },1500);
+});
+
+document.getElementById('nameInp').addEventListener('keydown',function(e){
+  if(e.key==='Enter') createServer();
+});
+</script>
+</body>
+</html>
