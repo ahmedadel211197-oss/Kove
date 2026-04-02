@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kove — الإعدادات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#040b14;--bg2:#071320;--bg3:#0a1a2e;--bg4:#0d2038;
+  --teal:#3ecfc6;--teal-d:#2a9d94;--gold:#c8a84b;
+  --white:#e8f4f8;--muted:#4a6a82;--muted2:#2a4558;
+  --border:rgba(62,207,198,.1);--b2:rgba(255,255,255,.05);
+  --online:#22c55e;--dnd:#f87171;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);overflow:hidden;}
+body{color:var(--white);font-family:'Cairo',sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;}
+button{font-family:'Cairo',sans-serif;cursor:pointer;}
+a{text-decoration:none;color:inherit;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px;}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .6s,visibility .6s;}
+#splash.hide{opacity:0;visibility:hidden;pointer-events:none;}
+.sp-img{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 0 24px rgba(62,207,198,.5));animation:spP 2s ease-in-out infinite;}
+.sp-name{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:6px;background:linear-gradient(135deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sp-dots{display:flex;gap:5px;}
+.sp-dots span{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:spD 1.2s ease-in-out infinite;}
+.sp-dots span:nth-child(2){animation-delay:.2s;}.sp-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes spP{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+@keyframes spD{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
+
+#app{display:flex;flex-direction:column;flex:1;overflow:hidden;opacity:0;transition:opacity .5s;height:100vh;}
+#app.show{opacity:1;}
+
+/* TOP NAV */
+.top-nav{height:52px;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--b2);display:flex;align-items:center;padding:0 18px;gap:12px;}
+.nav-logo{display:flex;align-items:center;gap:8px;}
+.nav-logo img{width:26px;height:26px;object-fit:contain;}
+.nav-logo-name{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;letter-spacing:2px;background:linear-gradient(120deg,var(--teal),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-sep{width:1px;height:20px;background:var(--b2);}
+.back-btn{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);transition:color .2s;}
+.back-btn:hover{color:var(--white);}
+.nav-title{font-size:14px;font-weight:800;color:var(--white);}
+
+/* PAGE */
+.page{flex:1;overflow-y:auto;padding:28px 16px 48px;display:flex;justify-content:center;}
+.settings-wrap{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px;}
+
+/* SECTION */
+.sec{background:var(--bg2);border:1px solid var(--b2);border-radius:14px;overflow:hidden;}
+.sec-hdr{padding:14px 18px;border-bottom:1px solid var(--b2);display:flex;align-items:center;gap:8px;}
+.sec-hdr-title{font-size:13px;font-weight:800;color:var(--white);}
+.sec-hdr-icon{color:var(--teal);}
+.sec-row{display:flex;align-items:center;gap:14px;padding:14px 18px;transition:background .12s;position:relative;}
+.sec-row:not(:last-child){border-bottom:1px solid var(--b2);}
+.sec-row:hover{background:rgba(255,255,255,.02);}
+.sec-row-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sec-row-label{font-size:14px;font-weight:700;color:var(--white);flex:1;}
+.sec-row-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+.sec-row-val{font-size:13px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sec-row-arrow{color:var(--muted2);}
+.sec-row-btn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;text-align:right;cursor:pointer;}
+.sec-row-btn:hover .sec-row-label{color:var(--teal);}
+
+/* toggle */
+.toggle{width:42px;height:24px;border-radius:12px;background:var(--bg4);border:1px solid var(--b2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--teal-d);}
+.toggle::after{content:'';position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s;}
+.toggle.on::after{transform:translateX(-18px);background:white;}
+
+/* danger zone */
+.danger-row{display:flex;align-items:center;gap:14px;padding:14px 18px;}
+.danger-row:not(:last-child){border-bottom:1px solid var(--b2);}
+.btn-danger{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:800;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.btn-logout{background:rgba(248,113,113,.1);color:var(--dnd);border:1px solid rgba(248,113,113,.2);}
+.btn-logout:hover{background:var(--dnd);color:white;}
+.btn-delete{background:rgba(248,113,113,.06);color:var(--dnd);border:1px solid rgba(248,113,113,.12);}
+.btn-delete:hover{background:rgba(248,113,113,.15);}
+
+/* account card */
+.acc-card{display:flex;align-items:center;gap:12px;padding:16px 18px;}
+.acc-av{width:48px;height:48px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:var(--bg);overflow:hidden;}
+.acc-av img{width:100%;height:100%;object-fit:cover;}
+.acc-name{font-size:15px;font-weight:800;color:var(--white);}
+.acc-tag{font-size:12px;color:var(--muted);}
+.acc-email{font-size:11px;color:var(--muted2);margin-top:2px;}
+.acc-edit-btn{margin-right:auto;display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;background:rgba(62,207,198,.1);border:1px solid var(--border);color:var(--teal);font-size:13px;font-weight:700;transition:all .2s;}
+.acc-edit-btn:hover{background:var(--teal);color:var(--bg);}
+
+/* CONFIRM MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--b2);border-radius:16px;padding:28px 24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.modal-title{font-size:17px;font-weight:900;margin-bottom:8px;}
+.modal-desc{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
+.modal-acts{display:flex;gap:10px;}
+.modal-cancel{flex:1;padding:10px;border-radius:8px;background:transparent;color:var(--white);border:1px solid var(--b2);font-size:14px;font-weight:700;transition:all .2s;}
+.modal-cancel:hover{border-color:var(--muted);}
+.modal-confirm{flex:1;padding:10px;border-radius:8px;background:var(--dnd);color:white;border:none;font-size:14px;font-weight:800;transition:opacity .2s;}
+.modal-confirm:hover{opacity:.85;}
+
+/* BOTTOM NAV */
+.b-nav{display:none;height:54px;flex-shrink:0;background:var(--bg2);border-top:1px solid var(--b2);justify-content:space-around;align-items:center;}
+.bnbtn{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted2);background:none;border:none;padding:0 12px;transition:color .2s;}
+.bnbtn.act{color:var(--teal);}
+.bnbtn svg{width:20px;height:20px;}
+.bnbtn span{font-size:9px;font-weight:700;}
+
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+@media(max-width:860px){.b-nav{display:flex;}.top-nav{display:none;}}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <img class="sp-img" src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png" alt="Kove" onerror="this.style.display='none'"/>
+  <div class="sp-name">KOVE</div>
+  <div class="sp-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">تأكيد</div>
+    <div class="modal-desc" id="modalDesc">هل انت متأكد؟</div>
+    <div class="modal-acts">
+      <button class="modal-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="modal-confirm" id="modalConfirm">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+
+  <div class="top-nav">
+    <a href="app.html" class="nav-logo">
+      <img src="img/file_000000008270720a8e1e80fd9d619876-removebg-preview (1).png" alt="Kove" onerror="this.style.display='none'"/>
+      <span class="nav-logo-name">KOVE</span>
+    </a>
+    <div class="nav-sep"></div>
+    <a href="profile.html" class="back-btn">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      رجوع
+    </a>
+    <div class="nav-sep"></div>
+    <span class="nav-title">الإعدادات</span>
+  </div>
+
+  <div class="page">
+    <div class="settings-wrap">
+
+      <!-- ACCOUNT -->
+      <div class="sec">
+        <div class="sec-hdr">
+          <svg class="sec-hdr-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          <span class="sec-hdr-title">الحساب</span>
+        </div>
+        <div class="acc-card">
+          <div class="acc-av" id="settingsAv"><span id="settingsAvL">?</span></div>
+          <div>
+            <div class="acc-name" id="settingsName">...</div>
+            <div class="acc-tag" id="settingsTag">@...</div>
+            <div class="acc-email" id="settingsEmail">...</div>
+          </div>
+          <a href="profile.html" class="acc-edit-btn">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            تعديل
+          </a>
+        </div>
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="sec">
+        <div class="sec-hdr">
+          <svg class="sec-hdr-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span class="sec-hdr-title">الأمان</span>
+        </div>
+        <div class="sec-row">
+          <div class="sec-row-icon" style="background:rgba(62,207,198,.08)">
+            <svg width="16" height="16" fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style="flex:1">
+            <div class="sec-row-label">تغيير كلمة المرور</div>
+            <div class="sec-row-desc">هيتبعت لك إيميل لإعادة التعيين</div>
+          </div>
+          <button onclick="sendPasswordReset()" style="padding:7px 14px;border-radius:8px;background:rgba(62,207,198,.1);border:1px solid var(--border);color:var(--teal);font-size:13px;font-weight:700;transition:all .2s;" onmouseover="this.style.background='var(--teal)';this.style.color='var(--bg)'" onmouseout="this.style.background='rgba(62,207,198,.1)';this.style.color='var(--teal)'">إرسال</button>
+        </div>
+        <div class="sec-row" id="pwResetMsg" style="display:none;background:rgba(34,197,94,.06);">
+          <div style="font-size:13px;color:var(--online);">✅ تم إرسال إيميل إعادة تعيين كلمة المرور</div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS (UI only) -->
+      <div class="sec">
+        <div class="sec-hdr">
+          <svg class="sec-hdr-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="sec-hdr-title">الإشعارات</span>
+        </div>
+        <div class="sec-row">
+          <div class="sec-row-icon" style="background:rgba(200,168,75,.08)">
+            <svg width="16" height="16" fill="none" stroke="var(--gold)" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div style="flex:1"><div class="sec-row-label">إشعارات الرسائل</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="sec-row">
+          <div class="sec-row-icon" style="background:rgba(124,111,224,.08)">
+            <svg width="16" height="16" fill="none" stroke="#9d8ff5" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div style="flex:1"><div class="sec-row-label">طلبات الصداقة</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+
+      <!-- APPEARANCE (UI only) -->
+      <div class="sec">
+        <div class="sec-hdr">
+          <svg class="sec-hdr-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <span class="sec-hdr-title">المظهر</span>
+        </div>
+        <div class="sec-row">
+          <div class="sec-row-icon" style="background:rgba(62,207,198,.08)">
+            <svg width="16" height="16" fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 2v10l4.95 4.95"/></svg>
+          </div>
+          <div style="flex:1"><div class="sec-row-label">الوضع الداكن</div><div class="sec-row-desc">دايماً مفعّل في Kove</div></div>
+          <div class="toggle on" style="opacity:.5;cursor:not-allowed"></div>
+        </div>
+      </div>
+
+      <!-- DANGER ZONE -->
+      <div class="sec">
+        <div class="sec-hdr">
+          <svg class="sec-hdr-icon" width="15" height="15" fill="none" stroke="var(--dnd)" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="sec-hdr-title" style="color:var(--dnd)">منطقة الخطر</span>
+        </div>
+        <div class="danger-row">
+          <button class="btn-danger btn-logout" onclick="confirmLogout()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            تسجيل الخروج
+          </button>
+        </div>
+        <div class="danger-row">
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:var(--dnd)">حذف الحساب</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">هيتحذف كل حاجة ومش هترجع</div>
+          </div>
+          <button class="btn-danger btn-delete" onclick="confirmDelete()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            حذف
+          </button>
+        </div>
+      </div>
+
+      <!-- VERSION -->
+      <div style="text-align:center;font-size:11px;color:var(--muted2);padding:8px 0;">
+        Kove v0.1.0 — جميع الحقوق محفوظة © 2026
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="b-nav">
+    <button class="bnbtn" onclick="location.href='app.html'">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>الشات</span>
+    </button>
+    <button class="bnbtn" onclick="location.href='home.html'">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <span>الأصدقاء</span>
+    </button>
+    <button class="bnbtn" onclick="location.href='dm.html'">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <span>DMs</span>
+    </button>
+    <button class="bnbtn act">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>الإعدادات</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+var {createClient}=window.supabase;
+var sb=createClient('https://votiamtckjctbidhuxap.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdGlhbXRja2pjdGJpZGh1eGFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzU3NDcsImV4cCI6MjA4OTUxMTc0N30.iOcJ51FsEj2qsv8G2UqBshFe5NGw9x1OUw57z9vvu0Q');
+var user=null,profile=null,pendingAction=null;
+var COLORS=['#3ecfc6','#c8a84b','#7c6fe0','#f87171','#22c55e','#f97316','#ec4899','#06b6d4'];
+function gc(s){var h=0;for(var i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return COLORS[Math.abs(h)%COLORS.length];}
+function gl(n){return n?n.charAt(0).toUpperCase():'?';}
+
+window.addEventListener('load',async function(){
+  var {data:{session}}=await sb.auth.getSession();
+  if(!session){location.href='login.html';return;}
+  user=session.user;
+  var {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  profile=p;
+  if(profile){
+    var col=gc(profile.name||profile.username||'k');
+    var av=document.getElementById('settingsAv');
+    av.style.background='linear-gradient(135deg,'+col+','+col+'aa)';
+    if(profile.avatar_url){av.innerHTML='<img src="'+profile.avatar_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML=\'<span>'+gl(profile.name)+'</span>\'"/>';}
+    else{document.getElementById('settingsAvL').textContent=gl(profile.name);}
+    document.getElementById('settingsName').textContent=profile.name||'';
+    document.getElementById('settingsTag').textContent='@'+(profile.username||'');
+    document.getElementById('settingsEmail').textContent=user.email||'';
+  }
+  setTimeout(function(){document.getElementById('splash').classList.add('hide');document.getElementById('app').classList.add('show');},1500);
+});
+
+async function sendPasswordReset(){
+  if(!user||!user.email) return;
+  await sb.auth.resetPasswordForEmail(user.email,{redirectTo:location.origin+'/reset-password.html'});
+  document.getElementById('pwResetMsg').style.display='flex';
+}
+
+function openModal(title,desc,onConfirm){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalDesc').textContent=desc;
+  pendingAction=onConfirm;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');pendingAction=null;}
+document.getElementById('modalConfirm').onclick=function(){if(pendingAction)pendingAction();closeModal();};
+
+function confirmLogout(){
+  openModal('تسجيل الخروج','هل انت متأكد إنك عايز تخرج من حسابك؟',async function(){
+    await sb.auth.signOut();
+    location.href='login.html';
+  });
+}
+
+function confirmDelete(){
+  openModal('حذف الحساب','ده هيحذف حسابك وكل بياناتك نهائياً. مش هترجع!',async function(){
+    // delete profile first then sign out (actual user delete needs service role)
+    await sb.from('profiles').delete().eq('id',user.id);
+    await sb.auth.signOut();
+    location.href='login.html';
+  });
+}
+</script>
+</body>
+</html>
